@@ -1,0 +1,173 @@
+-- Load necessary services
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local UserInputService = game:GetService("UserInputService")
+local Camera = Workspace.CurrentCamera
+local RunService = game:GetService("RunService")
+
+-- Initialize GUI
+local screenGui = Instance.new("ScreenGui")
+local frame = Instance.new("Frame")
+local titleLabel = Instance.new("TextLabel")
+local toggleButton = Instance.new("TextButton")
+local aimbotEnabled = false
+local guiVisible = true
+local smoothness = 0.5
+local targetPartName = "UpperTorso" -- Default to torso
+
+-- Debug print
+print("✅ Setting up GUI...")
+
+-- Setup GUI properties
+screenGui.Name = "Haunt's Aimbot Modern"
+screenGui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
+
+-- Modern frame style with rounded corners and shadow effect
+frame.Size = UDim2.new(0.3, 0, 0.2, 0)
+frame.Position = UDim2.new(0.35, 0, 0.4, 0)
+frame.BackgroundColor3 = Color3.fromRGB(27, 42, 53)
+frame.BorderSizePixel = 0
+frame.Parent = screenGui
+frame.AnchorPoint = Vector2.new(0.5, 0.5)
+frame.ClipsDescendants = true
+frame.BackgroundTransparency = 0.2
+frame.ZIndex = 2
+
+-- Apply rounded corners using UIStroke
+local cornerRadius = UDim.new(0, 12)
+local uiCorner = Instance.new("UICorner")
+uiCorner.CornerRadius = cornerRadius
+uiCorner.Parent = frame
+
+-- Title Label
+titleLabel.Size = UDim2.new(1, 0, 0.25, 0)
+titleLabel.Position = UDim2.new(0, 0, 0, 0)
+titleLabel.Text = "Haunt's Rewrite v1.0"
+titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleLabel.BackgroundColor3 = Color3.fromRGB(27, 42, 53)
+titleLabel.TextScaled = true
+titleLabel.TextXAlignment = Enum.TextXAlignment.Center
+titleLabel.Font = Enum.Font.GothamBold
+titleLabel.Parent = frame
+
+-- Toggle Aimbot Button with hover effect
+toggleButton.Size = UDim2.new(0.6, 0, 0.3, 0)
+toggleButton.Position = UDim2.new(0.2, 0, 0.35, 0)
+toggleButton.Text = "Toggle Aimbot"
+toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleButton.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
+toggleButton.TextScaled = true
+toggleButton.Font = Enum.Font.GothamMedium
+toggleButton.Parent = frame
+
+-- Hover effect on button
+toggleButton.MouseEnter:Connect(function()
+    toggleButton.BackgroundColor3 = Color3.fromRGB(0, 180, 255)
+end)
+
+toggleButton.MouseLeave:Connect(function()
+    toggleButton.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
+end)
+
+-- Button click effect
+toggleButton.MouseButton1Click:Connect(function()
+    toggleAimbot()
+end)
+
+-- Toggle button functionality
+local function toggleAimbot()
+    aimbotEnabled = not aimbotEnabled
+    toggleButton.Text = aimbotEnabled and "Aimbot ON" or "Aimbot OFF"
+    toggleButton.BackgroundColor3 = aimbotEnabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(0, 150, 255)
+    print("🎯 Aimbot toggled: " .. tostring(aimbotEnabled))
+end
+
+-- Function to toggle GUI visibility
+local function toggleGui()
+    guiVisible = not guiVisible
+    screenGui.Enabled = guiVisible -- Fix GUI toggling
+    print("🖥️ GUI visibility toggled: " .. tostring(guiVisible))
+end
+
+-- Key press functionality
+UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
+    -- GUI Toggle (RightShift)
+    if input.KeyCode == Enum.KeyCode.RightShift then
+        if not gameProcessedEvent then
+            toggleGui()
+        end
+
+    -- Aimbot Toggle (Q)
+    elseif input.KeyCode == Enum.KeyCode.Q then
+        if not gameProcessedEvent then
+            toggleAimbot()
+        end
+
+    -- Change Target Part (1 for Torso, 3 for Head) - Forced to work even in BedWars
+    elseif aimbotEnabled and (input.KeyCode == Enum.KeyCode.One or input.KeyCode == Enum.KeyCode.Three) then
+        if input.KeyCode == Enum.KeyCode.One then
+            targetPartName = "UpperTorso"
+            print("🎯 Target part set to Torso")
+        elseif input.KeyCode == Enum.KeyCode.Three then
+            targetPartName = "Head"
+            print("🎯 Target part set to Head")
+        end
+    end
+end)
+
+-- Aimbot functionality
+local function getClosestPlayer()
+    local closestPlayer = nil
+    local shortestDistance = math.huge
+    local myPosition = Camera.CFrame.Position
+    local myTeam = Players.LocalPlayer.Team
+
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= Players.LocalPlayer and player.Team ~= myTeam and player.Character then
+            local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+            if humanoid and humanoid.Health > 0 then
+                local targetPart = player.Character:FindFirstChild(targetPartName)
+                if targetPart then
+                    local targetPosition = targetPart.Position
+                    local distance = (myPosition - targetPosition).magnitude
+
+                    if distance < shortestDistance and distance <= 32 then
+                        closestPlayer = player
+                        shortestDistance = distance
+                    end
+                end
+            end
+        end
+    end
+
+    return closestPlayer
+end
+
+local function aimbot()
+    if aimbotEnabled then
+        local target = getClosestPlayer()
+        if target and target.Character then
+            local targetPart = target.Character:FindFirstChild(targetPartName)
+            if targetPart then
+                local targetPosition = targetPart.Position
+                local currentPosition = Camera.CFrame.Position
+
+                -- Smooth aimbot logic for first-person and third-person
+                if UserInputService.MouseBehavior == Enum.MouseBehavior.LockCenter then
+                    Camera.CFrame = CFrame.new(currentPosition, targetPosition)
+                else
+                    local smoothPosition = Camera.CFrame.Position:Lerp(targetPosition, smoothness)
+                    Camera.CFrame = CFrame.new(smoothPosition, targetPosition)
+                end
+            end
+        end
+    end
+end
+
+-- Update aimbot on every frame
+RunService.RenderStepped:Connect(function()
+    aimbot()
+end)
+
+-- Debug print to confirm script execution
+print("✅ Script fully loaded!")
