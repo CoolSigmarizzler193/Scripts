@@ -104,11 +104,11 @@ UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
         end
 
     -- Change Target Part (1 for Torso, 3 for Head) - Forced to work even in BedWars
-    elseif aimbotEnabled and (input.KeyCode == Enum.KeyCode.One or input.KeyCode == Enum.KeyCode.Three) then
+    elseif aimbotEnabled and (input.KeyCode == Enum.KeyCode.One or input.KeyCode == Enum.KeyCode.Four) then
         if input.KeyCode == Enum.KeyCode.One then
             targetPartName = "UpperTorso"
             print("🎯 Target part set to Torso")
-        elseif input.KeyCode == Enum.KeyCode.Three then
+        elseif input.KeyCode == Enum.KeyCode.Four then
             targetPartName = "Head"
             print("🎯 Target part set to Head")
         end
