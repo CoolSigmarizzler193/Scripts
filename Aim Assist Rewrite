@@ -1,5 +1,3 @@
--- just why...
-
 -- Load necessary services
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
@@ -11,10 +9,11 @@ local RunService = game:GetService("RunService")
 local screenGui = Instance.new("ScreenGui")
 local frame = Instance.new("Frame")
 local titleLabel = Instance.new("TextLabel")
+local aimbotToggleButton = Instance.new("TextButton")
+local aimbotStatusLabel = Instance.new("TextLabel")
 local torsoKeyBox = Instance.new("TextBox")
 local headKeyBox = Instance.new("TextBox")
 local toggleAimbotBox = Instance.new("TextBox")
-local guiToggleButton = Instance.new("TextButton")
 
 -- Aimbot Variables
 local aimbotEnabled = false
@@ -29,40 +28,26 @@ local keybinds = {
 screenGui.Name = "Haunt's Aimbot Modern"
 screenGui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
 
-frame.Size = UDim2.new(0.3, 0, 0.3, 0)
-frame.Position = UDim2.new(0.35, 0, 0.4, 0)
-frame.BackgroundColor3 = Color3.fromRGB(27, 42, 53)
-frame.BorderSizePixel = 0
+frame.Size = UDim2.new(0.4, 0, 0.4, 0)  -- Increased size
+frame.Position = UDim2.new(0.3, 0, 0.35, 0)  -- Adjusted position
+frame.BackgroundColor3 = Color3.fromRGB(27, 27, 27)
+frame.BorderSizePixel = 0  -- No border by default
 frame.Parent = screenGui
 frame.AnchorPoint = Vector2.new(0.5, 0.5)
 frame.ClipsDescendants = true
-frame.BackgroundTransparency = 0.2
+frame.BackgroundTransparency = 0.1
 
--- Dragging functionality
-local dragging, dragInput, dragStart, startPos
-frame.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragging = true
-        dragStart = input.Position
-        startPos = frame.Position
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                dragging = false
-            end
-        end)
-    end
-end)
-frame.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement then
-        dragInput = input
-    end
-end)
-UserInputService.InputChanged:Connect(function(input)
-    if input == dragInput and dragging then
-        local delta = input.Position - dragStart
-        frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-    end
-end)
+-- Add UI corners for rounded corners
+local uiCorner = Instance.new("UICorner")
+uiCorner.CornerRadius = UDim.new(0, 12)  -- Adjust corner radius for rounded corners
+uiCorner.Parent = frame
+
+-- Add UIStroke for border color
+local uiStroke = Instance.new("UIStroke")
+uiStroke.Thickness = 4  -- Increased border thickness
+uiStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+uiStroke.Color = Color3.fromRGB(0, 122, 255)  -- Blue border color
+uiStroke.Parent = frame
 
 -- Title Label
 titleLabel.Size = UDim2.new(1, 0, 0.15, 0)
@@ -73,23 +58,56 @@ titleLabel.TextScaled = true
 titleLabel.Font = Enum.Font.GothamBold
 titleLabel.Parent = frame
 
+-- Toggle Aimbot Button
+aimbotToggleButton.Size = UDim2.new(0.8, 0, 0.15, 0)
+aimbotToggleButton.Position = UDim2.new(0.1, 0, 0.2, 0)
+aimbotToggleButton.Text = "Toggle Aimbot"
+aimbotToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+aimbotToggleButton.BackgroundColor3 = Color3.fromRGB(0, 122, 255)
+aimbotToggleButton.Font = Enum.Font.GothamBold
+aimbotToggleButton.TextScaled = true
+aimbotToggleButton.Parent = frame
+
+aimbotToggleButton.MouseButton1Click:Connect(function()
+    aimbotEnabled = not aimbotEnabled
+    aimbotStatusLabel.Text = "Aimbot: " .. (aimbotEnabled and "ON" or "OFF")
+    aimbotStatusLabel.TextColor3 = aimbotEnabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+end)
+
+-- Aimbot Status Label
+aimbotStatusLabel.Size = UDim2.new(1, 0, 0.1, 0)
+aimbotStatusLabel.Position = UDim2.new(0, 0, 0.35, 0)
+aimbotStatusLabel.Text = "Aimbot: OFF"
+aimbotStatusLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+aimbotStatusLabel.TextScaled = true
+aimbotStatusLabel.Font = Enum.Font.GothamBold
+aimbotStatusLabel.BackgroundTransparency = 1
+aimbotStatusLabel.Parent = frame
+
 -- Keybinding Input Boxes
-torsoKeyBox.Size = UDim2.new(0.8, 0, 0.15, 0)
-torsoKeyBox.Position = UDim2.new(0.1, 0, 0.2, 0)
-torsoKeyBox.PlaceholderText = "Torso Key"
-torsoKeyBox.Parent = frame
+local function createTextBox(placeholder, position)
+    local box = Instance.new("TextBox")
+    box.Size = UDim2.new(0.8, 0, 0.12, 0)
+    box.Position = position
+    box.PlaceholderText = placeholder
+    box.Text = ""
+    box.TextColor3 = Color3.fromRGB(255, 255, 255)
+    box.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    box.Font = Enum.Font.Gotham
+    box.TextScaled = true
+    box.Parent = frame
+    return box
+end
 
-headKeyBox.Size = UDim2.new(0.8, 0, 0.15, 0)
-headKeyBox.Position = UDim2.new(0.1, 0, 0.4, 0)
-headKeyBox.PlaceholderText = "Head Key"
-headKeyBox.Parent = frame
-
-toggleAimbotBox.Size = UDim2.new(0.8, 0, 0.15, 0)
-toggleAimbotBox.Position = UDim2.new(0.1, 0, 0.6, 0)
-toggleAimbotBox.PlaceholderText = "Aimbot Toggle Key"
-toggleAimbotBox.Parent = frame
+toggleAimbotBox = createTextBox("Enable Aimbot Keybind", UDim2.new(0.1, 0, 0.5, 0))
+torsoKeyBox = createTextBox("Torso Aimbot Keybind", UDim2.new(0.1, 0, 0.65, 0))
+headKeyBox = createTextBox("Head Aimbot Keybind", UDim2.new(0.1, 0, 0.8, 0))
 
 -- Apply Keybinds
+toggleAimbotBox.FocusLost:Connect(function()
+    keybinds.toggleAimbot = Enum.KeyCode[toggleAimbotBox.Text]
+end)
+
 torsoKeyBox.FocusLost:Connect(function()
     keybinds.torsoLock = Enum.KeyCode[torsoKeyBox.Text]
 end)
@@ -98,20 +116,31 @@ headKeyBox.FocusLost:Connect(function()
     keybinds.headLock = Enum.KeyCode[headKeyBox.Text]
 end)
 
-toggleAimbotBox.FocusLost:Connect(function()
-    keybinds.toggleAimbot = Enum.KeyCode[toggleAimbotBox.Text]
+-- Draggable functionality
+local dragging, dragInput, dragStart, startPos
+local function updateInput(input)
+    local delta = input.Position - dragStart
+    frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+end
+
+frame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = frame.Position
+        input.Consumed = true
+    end
 end)
 
--- Toggle GUI visibility
-UserInputService.InputBegan:Connect(function(input, processed)
-    if input.KeyCode == Enum.KeyCode.RightShift then
-        screenGui.Enabled = not screenGui.Enabled
-    elseif input.KeyCode == keybinds.toggleAimbot then
-        aimbotEnabled = not aimbotEnabled
-    elseif input.KeyCode == keybinds.torsoLock then
-        targetPartName = "UpperTorso"
-    elseif input.KeyCode == keybinds.headLock then
-        targetPartName = "Head"
+frame.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = false
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if dragging then
+        updateInput(input)
     end
 end)
 
